@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37111.16 d17.14
+VisualStudioVersion = 17.14.37111.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BugTrackerю.Api", "BugTrackerю.Api.csproj", "{E89F58CF-9580-400F-9F8D-4E218AE3E923}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BugTracker.Api", "BugTracker.Api.csproj", "{E89F58CF-9580-400F-9F8D-4E218AE3E923}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

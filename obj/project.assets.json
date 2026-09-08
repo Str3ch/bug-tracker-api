@@ -453,9 +453,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\JobProjects\\BugTracker.Api\\BugTrackerю.Api.csproj",
-      "projectName": "BugTrackerю.Api",
-      "projectPath": "C:\\JobProjects\\BugTracker.Api\\BugTrackerю.Api.csproj",
+      "projectUniqueName": "C:\\JobProjects\\BugTracker.Api\\BugTracker.Api.csproj",
+      "projectName": "BugTracker.Api",
+      "projectPath": "C:\\JobProjects\\BugTracker.Api\\BugTracker.Api.csproj",
       "packagesPath": "C:\\Users\\trety\\.nuget\\packages\\",
       "outputPath": "C:\\JobProjects\\BugTracker.Api\\obj\\",
       "projectStyle": "PackageReference",

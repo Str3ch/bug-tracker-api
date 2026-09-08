@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "oLH+J05OH4k=",
+  "dgSpecHash": "N6xGDWNu4V0=",
   "success": true,
-  "projectFilePath": "C:\\JobProjects\\BugTracker.Api\\BugTrackerю.Api.csproj",
+  "projectFilePath": "C:\\JobProjects\\BugTracker.Api\\BugTracker.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\trety\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
     "C:\\Users\\trety\\.nuget\\packages\\microsoft.openapi\\1.6.14\\microsoft.openapi.1.6.14.nupkg.sha512",
