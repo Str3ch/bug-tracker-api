@@ -1,3 +1,6 @@
+using BugTracker.Api.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,7 +18,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+builder.Services.AddDbContext<BugTrackerDbContext>(
+    options =>
+        options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
