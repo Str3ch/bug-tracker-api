@@ -10,6 +10,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddDbContext<BugTrackerDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -18,10 +26,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-builder.Services.AddDbContext<BugTrackerDbContext>(
-    options =>
-        options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
