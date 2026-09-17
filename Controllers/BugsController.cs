@@ -1,4 +1,5 @@
 ﻿using BugTracker.Api.Data;
+using BugTracker.Api.DTOs;
 using BugTracker.Api.DTOs.Bugs;
 using BugTracker.Api.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -20,25 +21,79 @@ namespace BugTracker.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BugResponse>>> GetBugs()
+        public async Task<ActionResult<IEnumerable<BugResponse>>> GetBugs(
+            [FromQuery] BugQueryParameters parameters)
         {
-            var bugs = await _context.Bugs
-            .Select(b => new BugResponse
-            {
-                Id = b.Id,
-                Title = b.Title,
-                Description = b.Description,
-                Status = b.Status.ToString(),
-                Priority = b.Priority.ToString(),
-                Severity = b.Severity.ToString(),
-                ProjectId = b.ProjectId,
-                ProjectName = b.Project.Name,
-                CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt
-            })
-            .ToListAsync();
+            if (parameters.Page < 1) parameters.Page = 1;
+            if (parameters.PageSize < 1) parameters.PageSize = 20;
+            if (parameters.PageSize > 100) parameters.PageSize = 100;
 
-            return Ok(bugs);
+            var query = _context.Bugs.AsQueryable();
+            
+            if (!string.IsNullOrWhiteSpace(parameters.Search))
+            {
+                var search = parameters.Search.Trim();
+
+                query = query.Where(b =>
+                b.Title.Contains(search) ||
+                b.Description.Contains(search));
+            }
+            if (parameters.Status.HasValue)
+            {
+                query = query.Where(b =>
+                    b.Status == parameters.Status.Value);
+            }
+
+            if (parameters.Priority.HasValue)
+            {
+                query = query.Where(b =>
+                    b.Priority == parameters.Priority.Value);
+            }
+
+            if (parameters.Severity.HasValue)
+            {
+                query = query.Where(b =>
+                    b.Severity == parameters.Severity.Value);
+            }
+
+            if (parameters.ProjectId.HasValue)
+            {
+                query = query.Where(b =>
+                    b.ProjectId == parameters.ProjectId.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var bugs = await query
+                .OrderByDescending(b => b.CreatedAt)
+                .Skip((parameters.Page - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .Select(b => new BugResponse
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Description = b.Description,
+                    Status = b.Status.ToString(),
+                    Priority = b.Priority.ToString(),
+                    Severity = b.Severity.ToString(),
+                    ProjectId = b.ProjectId,
+                    ProjectName = b.Project.Name,
+                    CreatedAt = b.CreatedAt,
+                    UpdatedAt = b.UpdatedAt
+                })
+                .ToListAsync();
+
+            var result = new PagedResult<BugResponse>
+            {
+                Items = bugs,
+                Page = parameters.Page,
+                PageSize = parameters.PageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(
+                    totalCount / (double)parameters.PageSize)
+            };
+
+            return Ok(result);
         }
         [HttpGet("{id:int}")]
         public async Task<ActionResult<BugResponse>> GetBugs(int id)
