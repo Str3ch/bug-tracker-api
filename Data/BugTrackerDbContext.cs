@@ -13,7 +13,7 @@ namespace BugTracker.Api.Data
         }
 
         public DbSet<Project> Projects => Set<Project>();
-
+        public DbSet<User> Users => Set<User>();
         public DbSet<Bug> Bugs => Set<Bug>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -49,6 +49,31 @@ namespace BugTracker.Api.Data
 
             modelBuilder.Entity<Bug>()
                 .HasQueryFilter(b => !b.IsDeleted);
+
+            modelBuilder.Entity<Bug>()
+                .HasOne(b => b.CreatedBy)
+                .WithMany(u => u.CreatedBugs)
+                .HasForeignKey(b => b.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Username)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.PasswordHash)
+                .IsRequired();
+
+            modelBuilder.Entity<Bug>()
+                .HasOne(b => b.AssignedTo)
+                .WithMany(u => u.AssignedBugs)
+                .HasForeignKey(b => b.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -79,7 +79,15 @@ namespace BugTracker.Api.Controllers
                     ProjectId = b.ProjectId,
                     ProjectName = b.Project.Name,
                     CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt
+                    UpdatedAt = b.UpdatedAt,
+
+                    CreatedById = b.CreatedById,
+                    CreatedByUsername = b.CreatedBy != null
+                    ? b.CreatedBy.Username : null,
+
+                    AssignedToId = b.AssignedToId,
+                    AssignedToUsername = b.AssignedTo != null
+                    ? b.AssignedTo.Username : null,
                 })
                 .ToListAsync();
 
@@ -111,7 +119,15 @@ namespace BugTracker.Api.Controllers
                 ProjectId = b.ProjectId,
                 ProjectName = b.Project.Name,
                 CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt
+                UpdatedAt = b.UpdatedAt,
+
+                CreatedById = b.CreatedById,
+                CreatedByUsername = b.CreatedBy != null
+                    ? b.CreatedBy.Username : null,
+
+                AssignedToId = b.AssignedToId,
+                AssignedToUsername = b.AssignedTo != null
+                    ? b.AssignedTo.Username : null,
             })
             .FirstOrDefaultAsync();
 
@@ -163,7 +179,15 @@ namespace BugTracker.Api.Controllers
                     ProjectId = b.ProjectId,
                     ProjectName = b.Project.Name,
                     CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt
+                    UpdatedAt = b.UpdatedAt,
+
+                    CreatedById = b.CreatedById,
+                    CreatedByUsername = b.CreatedBy != null
+                    ? b.CreatedBy.Username : null,
+
+                    AssignedToId = b.AssignedToId,
+                    AssignedToUsername = b.AssignedTo != null
+                    ? b.AssignedTo.Username : null,
                 })
                 .FirstAsync();
 

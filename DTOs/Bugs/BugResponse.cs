@@ -21,5 +21,10 @@
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        public int? CreatedById { get; set;}
+        public string? CreatedByUsername { get; set; }
+        public int? AssignedToId { get; set; }
+        public string? AssignedToUsername { get; set; }
     }
 }
