@@ -5,12 +5,15 @@ using BugTracker.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 
 namespace BugTracker.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class BugsController : ControllerBase
     {
         private readonly BugTrackerDbContext _context;
@@ -152,6 +155,9 @@ namespace BugTracker.Api.Controllers
                     message = "Project does not exist."
                 });
             }
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized();
 
             var bug = new Bug
             {
@@ -159,7 +165,8 @@ namespace BugTracker.Api.Controllers
                 Description = request.Description.Trim(),
                 Priority = request.Priority,
                 Severity = request.Severity,
-                ProjectId = request.ProjectId
+                ProjectId = request.ProjectId,
+                CreatedById = userId
             };
 
             _context.Bugs.Add(bug);
