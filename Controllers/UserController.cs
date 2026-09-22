@@ -1,5 +1,6 @@
 ﻿using BugTracker.Api.Data;
 using BugTracker.Api.DTOs.Users;
+using BugTracker.Api.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ namespace BugTracker.Api.Controllers
             _context = context;
         }
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsers()
         {
             var users = await _context.Users.OrderBy(u => u.Username)
@@ -31,6 +33,7 @@ namespace BugTracker.Api.Controllers
             return Ok(users);
         }
         [HttpPut("{id:int}/role")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeRole(int id, ChangeUserRoleRequest request)
         {
             if (!Enum.IsDefined(request.Role))
@@ -58,5 +61,18 @@ namespace BugTracker.Api.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        [HttpGet("developers")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDevelopers()
+        {
+            var developers = await _context.Users
+                .Where(u => u.Role == UserRole.Developer).OrderBy(u => u.Username).Select(u => new
+                {
+                    u.Id,
+                    u.Username
+                }).ToListAsync();
+
+            return Ok(developers);
+        } 
     }
 }

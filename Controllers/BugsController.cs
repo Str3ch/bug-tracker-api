@@ -2,6 +2,7 @@
 using BugTracker.Api.DTOs;
 using BugTracker.Api.DTOs.Bugs;
 using BugTracker.Api.Models;
+using BugTracker.Api.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -32,7 +33,7 @@ namespace BugTracker.Api.Controllers
             if (parameters.PageSize > 100) parameters.PageSize = 100;
 
             var query = _context.Bugs.AsQueryable();
-            
+
             if (!string.IsNullOrWhiteSpace(parameters.Search))
             {
                 var search = parameters.Search.Trim();
@@ -260,6 +261,50 @@ namespace BugTracker.Api.Controllers
 
             await _context.SaveChangesAsync();
 
+            return NoContent();
+        }
+        [HttpPut("{id:int}/assign")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AssignBug(int id, AssignedBugRequest request)
+        {
+            var bug = await _context.Bugs.FirstOrDefaultAsync(b => b.Id == id);
+            if (bug == null)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+            if (request.UserId == null)
+            {
+                bug.AssignedToId = null;
+                bug.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId.Value);
+            if (user == null)
+            {
+                return NotFound(new
+                {
+                    message = "User does not exist"
+                });
+
+            }
+            if (user.Role != UserRole.Developer)
+            {
+                return BadRequest(new
+                {
+                    message = "Bug can only be assigned to a developer"
+                });
+            }
+
+            bug.AssignedToId = user.Id;
+            bug.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
             return NoContent();
         }
     }
