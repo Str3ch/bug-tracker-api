@@ -63,6 +63,7 @@ namespace BugTracker.Api.Controllers
         
         //POST api/projects
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProjectResponse>> CreateProject(
             CreateProjectRequest request)
         {
@@ -90,9 +91,8 @@ namespace BugTracker.Api.Controllers
                 response);
         }
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateProject(
-            int id,
-            UpdateProjectRequest request)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateProject(int id,UpdateProjectRequest request)
         {
             var project = await _context.Projects
                 .FindAsync(id);
@@ -107,6 +107,7 @@ namespace BugTracker.Api.Controllers
 
         //DELETE: api/projects/1
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProject(int id)
         {
             var project = await _context.Projects

@@ -142,6 +142,7 @@ namespace BugTracker.Api.Controllers
             return Ok(bug);
         }
         [HttpPost]
+        [Authorize(Roles = "Admin,Tester")]
         public async Task<ActionResult<BugResponse>> CreateBug(
         CreateBugRequest request)
         {
@@ -205,6 +206,7 @@ namespace BugTracker.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Admin,Tester")]
         public async Task<IActionResult> UpdateBug(
             int id,
             UpdateBugRequest request)
@@ -242,6 +244,7 @@ namespace BugTracker.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteBug(int id)
         {
             var bug = await _context.Bugs
