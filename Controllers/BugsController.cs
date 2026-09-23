@@ -233,7 +233,6 @@ namespace BugTracker.Api.Controllers
 
             bug.Title = request.Title.Trim();
             bug.Description = request.Description.Trim();
-            bug.Status = request.Status;
             bug.Priority = request.Priority;
             bug.Severity = request.Severity;
             bug.ProjectId = request.ProjectId;
@@ -307,6 +306,155 @@ namespace BugTracker.Api.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        [HttpPut("{id:int}/status")]
+        [Authorize(Roles = "Admin,Developer,Tester")]
+        public async Task<IActionResult> ChangeStatus(int id, ChangeBugStatusRequest request)
+        {
+            if (!Enum.IsDefined(request.Status))
+            {
+                return BadRequest(new
+                {
+                    message = "Invalid bug status"
+                });
+            }
+            var bug = await _context.Bugs.FirstOrDefaultAsync(b => b.Id == id);
+            if (bug == null)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+            if (bug.Status == request.Status)
+            {
+                return BadRequest(new
+                {
+                    message = "Bug already has this status."
+                });
+            }
+            if (!IsValidStatusTransition(bug.Status, request.Status))
+            {
+                return BadRequest(new
+                {
+                    message = $"Status cannot be changed from {bug.Status} to {request.Status}"
+                });
+            }
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized();
+            var isAdmin = User.IsInRole("Admin");
+            var isDeveloper = User.IsInRole("Developer");
+            var isTester = User.IsInRole("Tester");
+
+            if (isDeveloper)
+            {
+                if (bug.AssignedToId != userId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden
+                        , new
+                        {
+                            message = "Developer can only change status of bugs assigned to them"
+                        });
+                }
+                if (!CanDeveloperPerformTransition(bug.Status, request.Status))
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden,
+                        new
+                        {
+                            message = "Developer cannot perform this status transition"
+                        });
+                }
+            }
+            if (isTester && !CanTesterPerformTransition(bug.Status, request.Status))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    message = "Tester cannot perform this status transition"
+                });
+            }
+            if (!isAdmin && !isDeveloper && !isTester) return Forbid();
+
+            var oldStatus = bug.Status;
+
+            bug.Status = request.Status;
+            bug.UpdatedAt = DateTime.UtcNow;
+
+            var history = new BugStatusHistory
+            {
+                BugId = bug.Id,
+                OldStatus = oldStatus,
+                NewStatus = request.Status,
+                ChangedById = userId
+            };
+            _context.BugStatusHistories.Add(history);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        [HttpGet("{id:int}/status-history")]
+        public async Task<ActionResult<IEnumerable<BugStatusHistoryResponse>>>
+        GetStatusHistory(int id)
+        {
+            var bugExists = await _context.Bugs.AnyAsync(b => b.Id == id);
+            if (!bugExists)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+            var history = await _context.BugStatusHistories
+            .Where(h => h.BugId == id)
+            .OrderBy(h => h.ChangedAt)
+            .Select(h => new BugStatusHistoryResponse
+            {
+                Id = h.Id,
+
+                OldStatus = h.OldStatus.ToString(),
+
+                NewStatus = h.NewStatus.ToString(),
+
+                ChangedById = h.ChangedById,
+
+                ChangedByUsername = h.ChangedBy.Username,
+
+                ChangedAt = h.ChangedAt
+            }).ToListAsync();
+            return Ok(history);
+        }
+        private static bool IsValidStatusTransition(BugStatus oldStatus, BugStatus newStatus)
+        {
+            return (oldStatus, newStatus) switch
+            {
+                (BugStatus.Open, BugStatus.InProgress) => true,
+                (BugStatus.InProgress, BugStatus.Resolved) => true,
+                (BugStatus.Resolved, BugStatus.Closed) => true,
+                (BugStatus.Resolved, BugStatus.Reopened) => true,
+                (BugStatus.Closed, BugStatus.Reopened) => true,
+                (BugStatus.Reopened, BugStatus.InProgress) => true,
+                _ => false
+            };
+        }
+        private static bool CanDeveloperPerformTransition(BugStatus oldStatus, BugStatus newStatus)
+        {
+            return (oldStatus, newStatus) switch
+            {
+                (BugStatus.Open, BugStatus.InProgress) => true,
+                (BugStatus.InProgress, BugStatus.Resolved) => true,
+                (BugStatus.Reopened, BugStatus.InProgress) => true,
+                _ => false
+            };
+        }
+        private static bool CanTesterPerformTransition(BugStatus oldStatus, BugStatus newStatus)
+        {
+            return (oldStatus, newStatus) switch
+            {
+                (BugStatus.Resolved, BugStatus.Closed) => true,
+                (BugStatus.Resolved, BugStatus.Reopened) => true,
+                (BugStatus.Closed, BugStatus.Reopened) => true,
+                _ => false
+            };
+        }
     }
 }
-

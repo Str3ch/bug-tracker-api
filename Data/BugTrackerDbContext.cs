@@ -15,6 +15,7 @@ namespace BugTracker.Api.Data
         public DbSet<Project> Projects => Set<Project>();
         public DbSet<User> Users => Set<User>();
         public DbSet<Bug> Bugs => Set<Bug>();
+        public DbSet<BugStatusHistory> BugStatusHistories => Set<BugStatusHistory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -74,6 +75,18 @@ namespace BugTracker.Api.Data
                 .WithMany(u => u.AssignedBugs)
                 .HasForeignKey(b => b.AssignedToId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BugStatusHistory>()
+                .HasOne(h => h.Bug)
+                .WithMany(b => b.StatusHistory)
+                .HasForeignKey(h => h.BugId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BugStatusHistory>()
+                .HasOne(h => h.ChangedBy)
+                .WithMany(u => u.StatusChanges)
+                .HasForeignKey(h => h.ChangedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BugStatusHistory>()
+                .HasQueryFilter(h => !h.Bug.IsDeleted);
         }
     }
 }
