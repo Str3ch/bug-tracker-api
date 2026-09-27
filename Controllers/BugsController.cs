@@ -423,6 +423,82 @@ namespace BugTracker.Api.Controllers
             }).ToListAsync();
             return Ok(history);
         }
+        [HttpPost("{id:int}/comment")]
+        public async Task<ActionResult<BugsCommentResponse>> AddComment(int id, CreateBugCommentRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Content))
+            {
+                return BadRequest(new
+                {
+                    message = "Comment cannot be empty"
+                });
+            }
+            var bugExists = await _context.Bugs.AnyAsync(b => b.Id == id);
+            if (!bugExists)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized();
+
+            var comment = new BugComment
+            {
+                BugId = id,
+                AuthorId = userId,
+                Content = request.Content.Trim(),
+                CreatedAt = DateTime.UtcNow,
+            };
+
+            _context.BugComments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            var username = User.FindFirstValue(ClaimTypes.Name)
+                ?? string.Empty;
+
+            var response = new BugsCommentResponse
+            {
+                Id = comment.Id,
+                Content = comment.Content,
+                AuthorId = userId,
+                AuthorUsername = username,
+                CreatedAt = DateTime.UtcNow
+            };
+            return StatusCode(StatusCodes.Status201Created, response);
+        }
+        
+        [HttpGet("{id:int}/comments")]
+        public async Task<ActionResult<IEnumerable<BugsCommentResponse>>> GetComments(int id)
+        {
+            var bugExists = await _context.Bugs
+                .AnyAsync(b => b.Id == id);
+
+            if (!bugExists)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist."
+                });
+            }
+
+            var comments = await _context.BugComments
+                .Where(c => c.BugId == id)
+                .OrderBy(c => c.CreatedAt)
+                .Select(c => new BugsCommentResponse
+                {
+                    Id = c.Id,
+                    Content = c.Content,
+                    AuthorId = c.AuthorId,
+                    AuthorUsername = c.Author.Username,
+                    CreatedAt = c.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(comments);
+        }
         private static bool IsValidStatusTransition(BugStatus oldStatus, BugStatus newStatus)
         {
             return (oldStatus, newStatus) switch

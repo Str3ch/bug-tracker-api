@@ -12,5 +12,6 @@ namespace BugTracker.Api.Models
         public ICollection<Bug> CreatedBugs { get; set; } = new List<Bug>();
         public ICollection<Bug> AssignedBugs { get; set; } = new List<Bug>();
         public ICollection<BugStatusHistory> StatusChanges { get; set; } = new List<BugStatusHistory>();
+        public ICollection<BugComment> AuthoredComments { get; set; } = new List<BugComment>();
     }
 }

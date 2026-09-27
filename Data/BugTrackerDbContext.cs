@@ -16,6 +16,7 @@ namespace BugTracker.Api.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Bug> Bugs => Set<Bug>();
         public DbSet<BugStatusHistory> BugStatusHistories => Set<BugStatusHistory>();
+        public DbSet<BugComment> BugComments => Set<BugComment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -87,6 +88,22 @@ namespace BugTracker.Api.Data
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<BugStatusHistory>()
                 .HasQueryFilter(h => !h.Bug.IsDeleted);
+            modelBuilder.Entity<BugComment>()
+                .Property(c => c.Content)
+                .HasMaxLength(2000)
+                .IsRequired();
+            modelBuilder.Entity<BugComment>()
+                .HasOne(c=>c.Bug)
+                .WithMany(b => b.Comment)
+                .HasForeignKey(c => c.BugId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BugComment>()
+                .HasOne(c => c.Author)
+                .WithMany(u => u.AuthoredComments)
+                .HasForeignKey(c => c.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BugComment>()
+                .HasQueryFilter(c => !c.Bug.IsDeleted);
         }
     }
 }

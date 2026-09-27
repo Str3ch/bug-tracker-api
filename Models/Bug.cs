@@ -21,5 +21,6 @@ namespace BugTracker.Api.Models
         public int? AssignedToId { get; set; }
         public User? AssignedTo {  get; set; }
         public ICollection<BugStatusHistory> StatusHistory { get; set; } = new List<BugStatusHistory>();
+        public ICollection<BugComment> Comment { get; set; } = new List<BugComment>();
     }
 }
