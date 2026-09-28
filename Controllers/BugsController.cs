@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using BugTracker.Api.DTOs.Tags;
 
 
 namespace BugTracker.Api.Controllers
@@ -65,7 +66,12 @@ namespace BugTracker.Api.Controllers
                 query = query.Where(b =>
                     b.ProjectId == parameters.ProjectId.Value);
             }
-
+            if (!string.IsNullOrWhiteSpace(parameters.Tag))
+            {
+                var tag = parameters.Tag.Trim().ToLowerInvariant();
+                query = query.Where(b =>
+                b.BugTags.Any(bt => bt.Tag.Name == tag));
+            }
             var totalCount = await query.CountAsync();
 
             var bugs = await query
@@ -92,6 +98,14 @@ namespace BugTracker.Api.Controllers
                     AssignedToId = b.AssignedToId,
                     AssignedToUsername = b.AssignedTo != null
                     ? b.AssignedTo.Username : null,
+
+                    Tags = b.BugTags
+                    .OrderBy(bt => bt.Tag.Name)
+                    .Select(bt => new TagResponse
+                    {
+                        Id = bt.Tag.Id,
+                        Name = bt.Tag.Name,
+                    }).ToList(),
                 })
                 .ToListAsync();
 
@@ -132,6 +146,13 @@ namespace BugTracker.Api.Controllers
                 AssignedToId = b.AssignedToId,
                 AssignedToUsername = b.AssignedTo != null
                     ? b.AssignedTo.Username : null,
+                Tags = b.BugTags
+                    .OrderBy(bt => bt.Tag.Name)
+                    .Select(bt => new TagResponse
+                    {
+                        Id = bt.Tag.Id,
+                        Name = bt.Tag.Name,
+                    }).ToList(),
             })
             .FirstOrDefaultAsync();
 
@@ -197,6 +218,13 @@ namespace BugTracker.Api.Controllers
                     AssignedToId = b.AssignedToId,
                     AssignedToUsername = b.AssignedTo != null
                     ? b.AssignedTo.Username : null,
+                    Tags = b.BugTags
+                    .OrderBy(bt => bt.Tag.Name)
+                    .Select(bt => new TagResponse
+                    {
+                        Id = bt.Tag.Id,
+                        Name = bt.Tag.Name,
+                    }).ToList(),
                 })
                 .FirstAsync();
 
@@ -469,7 +497,7 @@ namespace BugTracker.Api.Controllers
             };
             return StatusCode(StatusCodes.Status201Created, response);
         }
-        
+
         [HttpGet("{id:int}/comments")]
         public async Task<ActionResult<IEnumerable<BugsCommentResponse>>> GetComments(int id)
         {
@@ -498,6 +526,103 @@ namespace BugTracker.Api.Controllers
                 .ToListAsync();
 
             return Ok(comments);
+        }
+        [HttpPost("{id:int}/tags/{tagId:int}")]
+        [Authorize(Roles = "Admin,Tester")]
+        public async Task<IActionResult> AddTag(int id, int tagId)
+        {
+            var bugExists = await _context.Bugs.AnyAsync(b => b.Id == id);
+            if (!bugExists)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+            var tagExists = await _context.Tags.AnyAsync(t => t.Id == tagId);
+
+            if (!tagExists)
+            {
+                return NotFound(new
+                {
+                    message = "Tag does not exist"
+                });
+            }
+            var alreadyAssigned = await _context.BugTags.AnyAsync(bt =>
+            bt.BugId == id && bt.TagId == tagId);
+
+            if (alreadyAssigned)
+            {
+                return Conflict(new
+                {
+                    message = "Tag is already assigned to this bug"
+                });
+            }
+
+            var bugTag = new BugTag
+            {
+                BugId = id,
+                TagId = tagId
+            };
+            _context.BugTags.Add(bugTag);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        [HttpDelete("{id:int}/tags/{tagId:int}")]
+        [Authorize(Roles = "Admin,Tester")]
+        public async Task<IActionResult> RemoveTag(int id, int tagId)
+        {
+            var bugExists = await _context.Bugs.AnyAsync(b => b.Id == id);
+
+            if (!bugExists)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+            var bugTag = await _context.BugTags.FirstOrDefaultAsync(bt =>
+            bt.BugId == id && bt.TagId == tagId);
+
+            if (bugTag == null)
+            {
+                return NotFound(new
+                {
+                    message = "Tag is not assigned to this bug"
+                });
+            }
+
+            _context.BugTags.Remove(bugTag);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        [HttpGet("{id:int}/tags")]
+        public async Task<ActionResult<IEnumerable<TagResponse>>> GetBugTags(int id)
+        {
+            var bugExists = await _context.Bugs.AnyAsync(b => b.Id == id);
+
+            if (!bugExists)
+            {
+                return NotFound(new
+                {
+                    message = "Bug does not exist"
+                });
+            }
+
+            var tags = await _context.BugTags
+                .Where(bt => bt.BugId == id)
+                .OrderBy(bt => bt.Tag.Name)
+                .Select(bt => new TagResponse
+                {
+                    Id = bt.Tag.Id,
+                    Name = bt.Tag.Name,
+                }).ToListAsync();
+
+            return Ok(tags);
         }
         private static bool IsValidStatusTransition(BugStatus oldStatus, BugStatus newStatus)
         {
@@ -533,4 +658,5 @@ namespace BugTracker.Api.Controllers
             };
         }
     }
+
 }

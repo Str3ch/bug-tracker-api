@@ -1,4 +1,6 @@
-﻿namespace BugTracker.Api.DTOs.Bugs
+﻿using BugTracker.Api.DTOs.Tags;
+
+namespace BugTracker.Api.DTOs.Bugs
 {
     public class BugResponse
     {
@@ -26,5 +28,6 @@
         public string? CreatedByUsername { get; set; }
         public int? AssignedToId { get; set; }
         public string? AssignedToUsername { get; set; }
+        public List<TagResponse> Tags { get; set; } = new();
     }
 }
