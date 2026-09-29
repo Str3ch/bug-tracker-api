@@ -1,14 +1,16 @@
-﻿using BugTracker.Api.Data;
+﻿using Azure.Core;
+using BugTracker.Api.Data;
 using BugTracker.Api.DTOs;
 using BugTracker.Api.DTOs.Bugs;
-using BugTracker.Api.Models;
+using BugTracker.Api.DTOs.Tags;
 using BugTracker.Api.Enums;
+using BugTracker.Api.Models;
+using BugTracker.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using BugTracker.Api.DTOs.Tags;
 
 
 namespace BugTracker.Api.Controllers
@@ -19,10 +21,13 @@ namespace BugTracker.Api.Controllers
     public class BugsController : ControllerBase
     {
         private readonly BugTrackerDbContext _context;
+        private readonly AuditService _auditService;
 
-        public BugsController(BugTrackerDbContext context)
+        public BugsController(BugTrackerDbContext context,
+            AuditService auditService)
         {
             _context = context;
+            _auditService = auditService;
         }
 
         [HttpGet]
@@ -196,6 +201,10 @@ namespace BugTracker.Api.Controllers
 
             await _context.SaveChangesAsync();
 
+            _auditService.Add(AuditAction.BugCreated, "Bug", bug.Id,
+                $"Big '{bug.Title}' was created");
+            await _context.SaveChangesAsync();
+
             var response = await _context.Bugs
                 .Where(b => b.Id == bug.Id)
                 .Select(b => new BugResponse
@@ -266,6 +275,10 @@ namespace BugTracker.Api.Controllers
             bug.ProjectId = request.ProjectId;
             bug.UpdatedAt = DateTime.UtcNow;
 
+            _auditService.Add(AuditAction.BugUpdated,
+                "Bug", bug.Id,
+                "Bug details were updated");
+
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -286,6 +299,10 @@ namespace BugTracker.Api.Controllers
             bug.IsDeleted = true;
             bug.UpdatedAt = DateTime.UtcNow;
 
+            _auditService.Add(AuditAction.BugDeleted,
+                "Bug", bug.Id,
+                $"Bug '{bug.Title}' was soft deleted");
+
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -305,8 +322,11 @@ namespace BugTracker.Api.Controllers
             if (request.UserId == null)
             {
                 bug.AssignedToId = null;
+                bug.AssignedTo = null;
                 bug.UpdatedAt = DateTime.UtcNow;
 
+                _auditService.Add(AuditAction.BugUnassigned,
+                    "Bug", bug.Id, "Developer was unassigned from the bug");
                 await _context.SaveChangesAsync();
                 return NoContent();
             }
@@ -330,6 +350,9 @@ namespace BugTracker.Api.Controllers
 
             bug.AssignedToId = user.Id;
             bug.UpdatedAt = DateTime.UtcNow;
+
+            _auditService.Add(AuditAction.BugAasigned,
+                "Bug", bug.Id, $"Bug was assigned to '{user.Username}' (UserId = {user.Id})");
 
             await _context.SaveChangesAsync();
             return NoContent();
@@ -415,7 +438,8 @@ namespace BugTracker.Api.Controllers
                 ChangedById = userId
             };
             _context.BugStatusHistories.Add(history);
-
+            _auditService.Add(AuditAction.BugStatusChanged,
+                "Bug",bug.Id, $"{oldStatus} -> {request.Status}");
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -482,6 +506,10 @@ namespace BugTracker.Api.Controllers
             };
 
             _context.BugComments.Add(comment);
+
+            _auditService.Add(AuditAction.CommentAdded,
+                "Bug", id, "Comment was added");
+
             await _context.SaveChangesAsync();
 
             var username = User.FindFirstValue(ClaimTypes.Name)
@@ -539,9 +567,9 @@ namespace BugTracker.Api.Controllers
                     message = "Bug does not exist"
                 });
             }
-            var tagExists = await _context.Tags.AnyAsync(t => t.Id == tagId);
+            var tag= await _context.Tags.FirstOrDefaultAsync(t => t.Id == tagId);
 
-            if (!tagExists)
+            if (tag == null)
             {
                 return NotFound(new
                 {
@@ -565,7 +593,8 @@ namespace BugTracker.Api.Controllers
                 TagId = tagId
             };
             _context.BugTags.Add(bugTag);
-
+            _auditService.Add(AuditAction.TagAdded,
+                "Bug",id,$"Tag '{tag.Name}' was added");
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -583,8 +612,8 @@ namespace BugTracker.Api.Controllers
                     message = "Bug does not exist"
                 });
             }
-            var bugTag = await _context.BugTags.FirstOrDefaultAsync(bt =>
-            bt.BugId == id && bt.TagId == tagId);
+            var bugTag = await _context.BugTags.Include(bt => bt.Tag)
+                .FirstOrDefaultAsync(bt => bt.BugId == id && bt.TagId == tagId);
 
             if (bugTag == null)
             {
@@ -594,7 +623,14 @@ namespace BugTracker.Api.Controllers
                 });
             }
 
+            var tagName = bugTag.Tag.Name;
+
+            
+
             _context.BugTags.Remove(bugTag);
+
+            _auditService.Add(AuditAction.TagRemoved,
+                "Bug",id,$"Tag '{tagName}' was removed");
 
             await _context.SaveChangesAsync();
 

@@ -1,6 +1,8 @@
 ﻿using BugTracker.Api.Data;
 using BugTracker.Api.DTOs.Tags;
+using BugTracker.Api.Enums;
 using BugTracker.Api.Models;
+using BugTracker.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +15,11 @@ namespace BugTracker.Api.Controllers
     public class TagsController : ControllerBase
     {
         private readonly BugTrackerDbContext _context;
-        public TagsController(BugTrackerDbContext context)
+        private readonly AuditService _auditService;
+        public TagsController(BugTrackerDbContext context, AuditService auditService)
         {
             _context = context;
+            _auditService = auditService;
         }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TagResponse>>> GetTags()
@@ -60,6 +64,11 @@ namespace BugTracker.Api.Controllers
 
             await _context.SaveChangesAsync();
 
+            _auditService.Add(AuditAction.TagCreated,
+                "Tag",tag.Id, $"Tag '{tag.Name}' was created.");
+
+            await _context.SaveChangesAsync();
+
             var response = new TagResponse
             {
                 Id = tag.Id,
@@ -91,6 +100,9 @@ namespace BugTracker.Api.Controllers
                     message = "Tag cannot be deleted while it is assigned to bugs"
                 });
             }
+            _auditService.Add(AuditAction.TagDeleted,
+                "Tag",tag.Id,$"Tag '{tag.Name}' was deleted.");
+
             _context.Tags.Remove(tag);
 
             await _context.SaveChangesAsync();

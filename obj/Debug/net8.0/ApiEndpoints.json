@@ -1,5 +1,56 @@
 [
   {
+    "ContainingType": "BugTracker.Api.Controllers.AuditLogsController",
+    "Method": "GetAuditLogs",
+    "RelativePath": "api/AuditLogs",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Action",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "EntityType",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "EntityId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "UserId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "BugTracker.Api.DTOs.PagedResult\u00601[[BugTracker.Api.DTOs.Audit.AuditLogResponse, BugTracker.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "BugTracker.Api.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/Auth/login",

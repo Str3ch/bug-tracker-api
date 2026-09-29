@@ -19,7 +19,7 @@ namespace BugTracker.Api.Data
         public DbSet<BugComment> BugComments => Set<BugComment>();
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<BugTag> BugTags => Set<BugTag>();
-
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -126,6 +126,30 @@ namespace BugTracker.Api.Data
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<BugTag>()
                 .HasQueryFilter(bt => !bt.Bug.IsDeleted);
+            modelBuilder.Entity<AuditLog>()
+                .Property(a => a.Action)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+            modelBuilder.Entity<AuditLog>()
+                .Property(a => a.EntityType)
+                .HasMaxLength(50)
+                .IsRequired();
+            modelBuilder.Entity<AuditLog>()
+                .Property(a => a.Details)
+                .HasMaxLength(2000);
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany(u => u.AuditLogs)
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(a => new
+                {
+                    a.EntityType,
+                    a.EntityId,
+                    a.CreatedAt
+                });
         }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using BugTracker.Api.Data;
 using BugTracker.Api.DTOs.Projects;
+using BugTracker.Api.Enums;
 using BugTracker.Api.Models;
+using BugTracker.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
 
 namespace BugTracker.Api.Controllers
 {
@@ -13,12 +15,14 @@ namespace BugTracker.Api.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly BugTrackerDbContext _context;
-        public ProjectsController(BugTrackerDbContext context)
+        private readonly AuditService _auditService;
+        public ProjectsController(BugTrackerDbContext context, AuditService auditService)
         {
             _context = context;
+            _auditService = auditService;
         }
 
-        //GET:  api/projects
+        
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProjectResponse>>> GetProjects()
@@ -37,7 +41,7 @@ namespace BugTracker.Api.Controllers
             return Ok(projects);
         }
 
-        //GET api/projects/1
+        
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ProjectResponse>> GetProject(int id)
         {
@@ -61,7 +65,7 @@ namespace BugTracker.Api.Controllers
         }
        
         
-        //POST api/projects
+        
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProjectResponse>> CreateProject(
@@ -73,7 +77,8 @@ namespace BugTracker.Api.Controllers
                 Description = request.Description?.Trim()
             };
             _context.Projects.Add(project);
-
+            _auditService.Add(AuditAction.ProjectCreated,
+                "Project",project.Id,$"Project '{project.Name}' was created.");
             await _context.SaveChangesAsync();
 
             var response = new ProjectResponse
@@ -96,16 +101,19 @@ namespace BugTracker.Api.Controllers
         {
             var project = await _context.Projects
                 .FindAsync(id);
-            if (project == null) { return NotFound(); }  
+            
+            if (project == null) { return NotFound(); }
+            var oldName = project.Name;
             project.Name = request.Name.Trim();
             project.Description = request.Description?.Trim();
 
             await _context.SaveChangesAsync();
-
+            _auditService.Add(AuditAction.ProjectUpdated,
+                "Project",project.Id,$"Project '{oldName}' was updated.");
             return NoContent();
         }
 
-        //DELETE: api/projects/1
+        
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProject(int id)
@@ -125,6 +133,8 @@ namespace BugTracker.Api.Controllers
                     message = "Project containing bugs cannot be deleted"
                 });
             }
+            _auditService.Add(AuditAction.ProjectDeleted,
+                "Project",project.Id,$"Project '{project.Name}' was deleted.");
             _context.Projects.Remove(project);
 
             await _context.SaveChangesAsync();

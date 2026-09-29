@@ -53,6 +53,8 @@ builder.Services.AddDbContext<BugTrackerDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AuditService>();
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key is not configured");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]

@@ -1,6 +1,7 @@
 ﻿using BugTracker.Api.Data;
 using BugTracker.Api.DTOs.Users;
 using BugTracker.Api.Enums;
+using BugTracker.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,12 @@ namespace BugTracker.Api.Controllers
     public class UserController : ControllerBase
     {
         private readonly BugTrackerDbContext _context;
+        private readonly AuditService _auditService;
 
-        public UserController(BugTrackerDbContext context) 
+        public UserController(BugTrackerDbContext context, AuditService auditService) 
         {
             _context = context;
+            _auditService = auditService;
         }
         [HttpGet]
         [Authorize(Roles = "Admin")]
@@ -57,7 +60,12 @@ namespace BugTracker.Api.Controllers
                     message = "User does not exist"
                 });
             }
+            var oldRole = user.Role;
             user.Role = request.Role;
+
+            _auditService.Add(AuditAction.UserRoleChanged,
+                "User", user.Id, $"{oldRole} -> {request.Role}");
+
             await _context.SaveChangesAsync();
             return NoContent();
         }
