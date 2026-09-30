@@ -456,6 +456,26 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "BugTracker.Api.Controllers.DashboardController",
+    "Method": "GetDashboard",
+    "RelativePath": "api/Dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "BugTracker.Api.DTOs.Dashboard.DashboardResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "BugTracker.Api.Controllers.ProjectsController",
     "Method": "GetProjects",
     "RelativePath": "api/Projects",
