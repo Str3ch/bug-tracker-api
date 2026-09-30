@@ -18,7 +18,7 @@ namespace BugTracker.Api.Controllers
         { 
             _context = context;
         }
-
+       
         [HttpGet]
         public async Task<ActionResult<DashboardResponse>> GetDashboard()
         {

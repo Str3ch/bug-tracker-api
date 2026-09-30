@@ -476,6 +476,16 @@
     ]
   },
   {
+    "ContainingType": "BugTracker.Api.Controllers.DashboardController",
+    "Method": "TestError",
+    "RelativePath": "api/Dashboard/test-error",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "BugTracker.Api.Controllers.ProjectsController",
     "Method": "GetProjects",
     "RelativePath": "api/Projects",

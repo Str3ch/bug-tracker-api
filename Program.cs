@@ -6,12 +6,40 @@ using BugTracker.Api.Data;
 using BugTracker.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using BugTracker.Api.Middleware;
+using BugTracker.Api.DTOs.Errors;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(x => x.Value?.Errors.Count > 0)
+            .ToDictionary(x => x.Key, x => x.Value!.Errors
+                    .Select(e => string.IsNullOrWhiteSpace(
+                            e.ErrorMessage) ? "Invalid value."
+                            : e.ErrorMessage)
+                    .ToArray());
+
+        var response =
+            new ValidationErrorResponse
+            {
+                StatusCode = StatusCodes.Status400BadRequest,
+                Message = "Validation failed.",
+                Errors = errors,
+                TraceId = context.HttpContext.TraceIdentifier
+            };
+
+        return new BadRequestObjectResult(response);
+    };
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -93,6 +121,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
