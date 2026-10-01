@@ -19,7 +19,7 @@ namespace BugTracker.Api.Services
         public void Add(AuditAction action, string entityType,
             int entityId, string? details = null)
         {
-            var userIdClaim = _httpContextAccessor.HttpContext.User.FindFirstValue(
+            var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 
             if (!int.TryParse(userIdClaim, out var userId))
