@@ -121,7 +121,32 @@ GET    /api/AuditLogs
 git clone https://github.com/Str3ch/bug-tracker-api.git
 cd bug-tracker-api
 ```
+## Docker
 
+Build the Docker image:
+
+```bash
+docker build -t bugtracker-api .
+```
+
+Run the API:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e ASPNETCORE_ENVIRONMENT=Development \
+  -e Jwt__Key="YOUR-SECURE-JWT-KEY" \
+  -e Jwt__Issuer="BugTracker.Api" \
+  -e Jwt__Audience="BugTracker.Client" \
+  bugtracker-api
+```
+
+Swagger is available at:
+
+```text
+http://localhost:8080/swagger
+```
+
+Database configuration must point to a SQL Server instance accessible from the container.
 ### Configure JWT secret
 
 The JWT signing key should not be committed to source control.
