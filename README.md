@@ -1,5 +1,5 @@
 # BugTracker API
-
+![CI](https://github.com/Str3ch/bug-tracker-api/actions/workflows/ci.yml/badge.svg)
 A RESTful bug tracking API built with ASP.NET Core 8.
 
 The project demonstrates authentication, role-based authorization, Entity Framework Core, workflow validation, audit logging, integration testing, and API documentation.
@@ -229,7 +229,15 @@ dotnet test BugTracker.Api.sln
 ```
 
 The tests cover authentication, authorization, validation, bug creation, assignment, invalid assignment, status workflow and status history.
+## Continuous Integration
 
+GitHub Actions automatically runs on pushes and pull requests to `main`.
+
+The CI pipeline:
+
+- restores NuGet dependencies;
+- builds the solution in Release configuration;
+- runs the integration test suite.
 ## Postman
 
 The Postman collection is located in:

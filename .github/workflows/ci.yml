@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore BugTracker.Api.sln
+      - name: Build
+        run: dotnet build BugTracker.Api.sln --configuration Release --no-restore
+      - name: Run tests
+        run: dotnet test BugTracker.Api.sln --configuration Release --no-build --verbosity normal
